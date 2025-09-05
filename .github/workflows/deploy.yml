@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      TERRAFORM_DIR: ${{ github.workspace }}/GCP
+      GCP_DIR: ${{ github.workspace }}/GCP
       ANSIBLE_DIR: ${{ github.workspace }}/Ansible
 
     steps:
@@ -24,29 +24,23 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # 3️⃣ Configure GCP credentials (write secret to file)
-      - name: Configure GCP Credentials
-        run: |
-          mkdir -p $TERRAFORM_DIR
-          echo "${{ secrets.GCP_CREDENTIALS }}" > $TERRAFORM_DIR/gcp-key.json
-
       # 4️⃣ Terraform Init
       - name: Terraform Init
-        working-directory: $TERRAFORM_DIR
+        working-directory: ./GCP
         run: terraform init
 
       # 5️⃣ Terraform Apply
       - name: Terraform Apply
-        working-directory: $TERRAFORM_DIR
+        working-directory: ./GCP
         run: terraform apply -auto-approve \
               -var="project_id=${{ secrets.GCP_PROJECT }}" \
               -var="region=${{ secrets.GCP_REGION }}" \
-              -var="credentials_file=${TERRAFORM_DIR}/gcp-key.json"
+              -var="credentials_file=$./GCP/gcp-key.json"
 
       # 6️⃣ Get Terraform output (VM IP)
       - name: Get VM IP
         id: tf_output
-        working-directory: $TERRAFORM_DIR
+        working-directory: ./GCP
         run: |
           ip=$(terraform output -raw instance_ip)
           echo "VM_IP=$ip" >> $GITHUB_ENV
