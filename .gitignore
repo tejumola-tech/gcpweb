@@ -1,0 +1,19 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+terraform.tfvars
+*.backup
+*. terraform.lock.hcl
+
+
+
+# GCP keys and credentials
+*.json
+*.pem
+*.key
+gcp
+gcp.pub
