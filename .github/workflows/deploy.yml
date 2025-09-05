@@ -1,3 +1,5 @@
+
+
 name: GCP Infra + Ansible Deploy
 
 on:
@@ -9,38 +11,47 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      TERRAFORM_DIR: ${{ github.workspace }}/GCP
+      ANSIBLE_DIR: ${{ github.workspace }}/Ansible
+
     steps:
       # 1️⃣ Checkout the repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Terraform
+      # 2️⃣ Set up Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # 3️⃣ Restore GCP credentials
+      # 3️⃣ Configure GCP credentials (write secret to file)
       - name: Configure GCP Credentials
-        run: echo "${{ secrets.GCP_CREDENTIALS }}" > $HOME/gcp-key.json
+        run: |
+          mkdir -p $TERRAFORM_DIR
+          echo "${{ secrets.GCP_CREDENTIALS }}" > $TERRAFORM_DIR/gcp-key.json
 
       # 4️⃣ Terraform Init
       - name: Terraform Init
-        working-directory: ${{ github.workspace }}/GCP
+        working-directory: $TERRAFORM_DIR
         run: terraform init
 
       # 5️⃣ Terraform Apply
       - name: Terraform Apply
-        working-directory: ${{ github.workspace }}/GCP
-        run: terraform apply -auto-approve -var="project_id=${{ secrets.GCP_PROJECT }}" -var="region=${{ secrets.GCP_REGION }}"
+        working-directory: $TERRAFORM_DIR
+        run: terraform apply -auto-approve \
+              -var="project_id=${{ secrets.GCP_PROJECT }}" \
+              -var="region=${{ secrets.GCP_REGION }}" \
+              -var="credentials_file=${TERRAFORM_DIR}/gcp-key.json"
 
       # 6️⃣ Get Terraform output (VM IP)
       - name: Get VM IP
         id: tf_output
-        working-directory: ${{ github.workspace }}/GCP
+        working-directory: $TERRAFORM_DIR
         run: |
           ip=$(terraform output -raw instance_ip)
           echo "VM_IP=$ip" >> $GITHUB_ENV
 
-      # 7️⃣ Setup SSH for Ansible
+      # 7️⃣ Configure SSH (write secret to file and setup known hosts)
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -52,10 +63,9 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
-      # 9️⃣ Run Ansible Playbook
+      # 9️⃣ Run Ansible playbook
       - name: Run Ansible Playbook
         run: |
           echo "[gcp_vm]" > inventory.ini
           echo "${{ env.VM_IP }} ansible_user=opate ansible_ssh_private_key_file=~/.ssh/id_rsa" >> inventory.ini
-          ansible-playbook -i inventory.ini Ansible/deploy_apache.yml
-
+          ansible-playbook -i inventory.ini $ANSIBLE_DIR/deploy_apache.yml
