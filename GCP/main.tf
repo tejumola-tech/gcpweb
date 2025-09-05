@@ -1,7 +1,7 @@
 provider "google" {
   project     = var.project_id
   region      = var.region
-  credentials = file(var.credentials_file)
+  credentials = file("${path.module}/gcp-key.json")
 }
 
 # VPC
