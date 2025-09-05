@@ -24,6 +24,12 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      # configure credentials
+      - name: Configure GCP Credentials
+        run: |
+          mkdir -p $GCP
+          echo "${{ secrets.GCP_CREDENTIALS }}" > $GCP/gcp-key.json
+
       # 4️⃣ Terraform Init
       - name: Terraform Init
         working-directory: ./GCP
