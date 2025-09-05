@@ -10,35 +10,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
+      # 1️⃣ Checkout the repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup Terraform
+      # 2️⃣ Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # Restore GCP credentials
+      # 3️⃣ Restore GCP credentials
       - name: Configure GCP Credentials
         run: echo "${{ secrets.GCP_CREDENTIALS }}" > $HOME/gcp-key.json
 
+      # 4️⃣ Terraform Init
       - name: Terraform Init
-        working-directory: ./GCP
+        working-directory: ${{ github.workspace }}/GCP
         run: terraform init
 
+      # 5️⃣ Terraform Apply
       - name: Terraform Apply
-        working-directory: ./GCP
+        working-directory: ${{ github.workspace }}/GCP
         run: terraform apply -auto-approve -var="project_id=${{ secrets.GCP_PROJECT }}" -var="region=${{ secrets.GCP_REGION }}"
 
-      # Get Terraform output (VM IP)
+      # 6️⃣ Get Terraform output (VM IP)
       - name: Get VM IP
         id: tf_output
-        working-directory: ./GCP
+        working-directory: ${{ github.workspace }}/GCP
         run: |
           ip=$(terraform output -raw instance_ip)
           echo "VM_IP=$ip" >> $GITHUB_ENV
 
-      # Setup SSH for Ansible
+      # 7️⃣ Setup SSH for Ansible
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -46,13 +48,14 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ env.VM_IP }} >> ~/.ssh/known_hosts
 
-      # Install Ansible
+      # 8️⃣ Install Ansible
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
-      # Run Ansible playbook
+      # 9️⃣ Run Ansible Playbook
       - name: Run Ansible Playbook
         run: |
           echo "[gcp_vm]" > inventory.ini
           echo "${{ env.VM_IP }} ansible_user=opate ansible_ssh_private_key_file=~/.ssh/id_rsa" >> inventory.ini
           ansible-playbook -i inventory.ini Ansible/deploy_apache.yml
+
