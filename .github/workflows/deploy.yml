@@ -35,8 +35,8 @@ jobs:
         run: |
           terraform apply -auto-approve \
               -var="project_id=${{ secrets.GCP_PROJECT }}" \
-              -var="region=${{ secrets.GCP_REGION }}" \
-              -var="credentials_file=$./GCP/gcp-key.json"
+              -var="region=${{ secrets.GCP_REGION }}" 
+              
 
       # 6️⃣ Get Terraform output (VM IP)
       - name: Get VM IP
