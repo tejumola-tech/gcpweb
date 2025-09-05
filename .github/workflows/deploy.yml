@@ -27,8 +27,8 @@ jobs:
       # configure credentials
       - name: Configure GCP Credentials
         run: |
-          mkdir -p ${{ github.workspace }}/GCP"
-          echo "${{ secrets.GCP_CREDENTIALS }}" > "${{ github.workspace }}/GCP/gcp-key.json"
+          mkdir -p "${{ github.workspace }}/GCP"
+          echo '${{ secrets.GCP_CREDENTIALS }}' > "${{ github.workspace }}/GCP/gcp-key.json"
 
       # 4️⃣ Terraform Init
       - name: Terraform Init
