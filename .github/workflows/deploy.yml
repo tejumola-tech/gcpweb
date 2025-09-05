@@ -1,0 +1,58 @@
+name: GCP Infra + Ansible Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # Restore GCP credentials
+      - name: Configure GCP Credentials
+        run: echo "${{ secrets.GCP_CREDENTIALS }}" > $HOME/gcp-key.json
+
+      - name: Terraform Init
+        working-directory: ./GCP
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: ./GCP
+        run: terraform apply -auto-approve -var="project_id=${{ secrets.GCP_PROJECT }}" -var="region=${{ secrets.GCP_REGION }}"
+
+      # Get Terraform output (VM IP)
+      - name: Get VM IP
+        id: tf_output
+        working-directory: ./GCP
+        run: |
+          ip=$(terraform output -raw instance_ip)
+          echo "VM_IP=$ip" >> $GITHUB_ENV
+
+      # Setup SSH for Ansible
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ env.VM_IP }} >> ~/.ssh/known_hosts
+
+      # Install Ansible
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+
+      # Run Ansible playbook
+      - name: Run Ansible Playbook
+        run: |
+          echo "[gcp_vm]" > inventory.ini
+          echo "${{ env.VM_IP }} ansible_user=opate ansible_ssh_private_key_file=~/.ssh/id_rsa" >> inventory.ini
+          ansible-playbook -i inventory.ini Ansible/deploy_apache.yml
