@@ -32,7 +32,8 @@ jobs:
       # 5️⃣ Terraform Apply
       - name: Terraform Apply
         working-directory: ./GCP
-        run: terraform apply -auto-approve \
+        run: |
+          terraform apply -auto-approve \
               -var="project_id=${{ secrets.GCP_PROJECT }}" \
               -var="region=${{ secrets.GCP_REGION }}" \
               -var="credentials_file=$./GCP/gcp-key.json"
