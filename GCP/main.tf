@@ -68,7 +68,7 @@ resource "google_compute_instance" "vm_instance" {
   }
 
   metadata = {
-     ssh-keys = "opate:${file("/home/opate/GCP/gcp.pub")}"
+     ssh-keys = "opate:${file("${path.module}/gcp.pub")}"
   }
 
   tags = ["ssh", "http", "https"]
