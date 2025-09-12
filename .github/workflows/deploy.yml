@@ -60,7 +60,7 @@ jobs:
           cat <<'EOF' > $HOME/.ssh/id_rsa
 ${{ secrets.SSH_PRIVATE_KEY }}
 EOF
-          chmod 600 $HOME/.ssh/id_rsa
+        chmod 600 $HOME/.ssh/id_rsa
 
           # Debug info
           ls -l $HOME/.ssh/id_rsa
