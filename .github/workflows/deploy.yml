@@ -54,18 +54,22 @@ jobs:
         shell: bash
         run: |
           mkdir -p $HOME/.ssh
-          cat <<EOF > $HOME/.ssh/id_rsa
-          ${{ secrets.SSH_PRIVATE_KEY }}
-          EOF
+          # Write SSH private key (no indentation)
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > $HOME/.ssh/id_rsa
           chmod 600 $HOME/.ssh/id_rsa
 
-          # Debug info
-          ls -l $HOME/.ssh/id_rsa
-          wc -l $HOME/.ssh/id_rsa || true
-
-          # Don’t fail if ssh-keyscan can’t reach the VM yet
-          ssh-keyscan -H ${{ env.VM_IP }} >> $HOME/.ssh/known_hosts || true
-
+          # Retry loop until VM is reachable
+          MAX_RETRIES=10
+          COUNT=0
+          while ! ssh-keyscan -H $VM_IP >> $HOME/.ssh/known_hosts 2>/dev/null; do
+            COUNT=$((COUNT+1))
+            if [ $COUNT -ge $MAX_RETRIES ]; then
+              echo "VM not reachable via SSH after $MAX_RETRIES attempts"
+              exit 1
+            fi
+            echo "Waiting for VM SSH... retry $COUNT/$MAX_RETRIES"
+            sleep 10
+          done
 
       # 8️⃣ Install Ansible
       - name: Install Ansible
@@ -77,6 +81,5 @@ jobs:
         shell: bash
         run: |
           echo "[gcp_vm]" > inventory.ini
-          echo "${{ env.VM_IP }} ansible_user=opate ansible_ssh_private_key_file=~/.ssh/id_rsa" >> inventory.ini
+          echo "$VM_IP ansible_user=opate ansible_ssh_private_key_file=$HOME/.ssh/id_rsa" >> inventory.ini
           ansible-playbook -i inventory.ini $ANSIBLE_DIR/deploy_apache.yml
-
