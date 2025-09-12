@@ -59,6 +59,11 @@ jobs:
           mkdir -p $HOME/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > $HOME/.ssh/id_rsa
           chmod 600 $HOME/.ssh/id_rsa
+
+          # Debug: check if file exists and length
+          ls -l $HOME/.ssh/id_rsa
+          wc -l $HOME/.ssh/id_rsa || true
+
           ssh-keyscan -H ${{ env.VM_IP }} >> $HOME/.ssh/known_hosts
 
       # 8️⃣ Install Ansible
