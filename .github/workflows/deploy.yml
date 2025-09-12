@@ -54,10 +54,10 @@ jobs:
 
       # 7️⃣ Configure SSH (write secret to file and setup known hosts)
       - name: Setup SSH
-  shell: bash
-  run: |
-    mkdir -p $HOME/.ssh
-    cat <<EOF > $HOME/.ssh/id_rsa
+        shell: bash
+        run: |
+          mkdir -p $HOME/.ssh
+          cat <<EOF > $HOME/.ssh/id_rsa
 ${{ secrets.SSH_PRIVATE_KEY }}
 EOF
     chmod 600 $HOME/.ssh/id_rsa
